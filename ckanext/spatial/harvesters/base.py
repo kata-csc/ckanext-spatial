@@ -1,3 +1,4 @@
+import ast
 import re
 import cgitb
 import warnings
@@ -286,24 +287,26 @@ class SpatialHarvester(HarvesterBase):
                 extras['licence_url'] = license_url_extracted
 
 
+        # Disabled: causes Instance <User at xxx> is not bound to a Session error 
+        # when harvesting Syke
         # Metadata license ID check for package
-        use_constraints = iso_values.get('use-constraints')
-        if use_constraints:
+        # use_constraints = iso_values.get('use-constraints')
+        # if use_constraints:
 
-            context = {'model': model, 'session': model.Session, 'user': self._get_user_name()}
-            license_list = p.toolkit.get_action('license_list')(context, {})
+        #     context = {'model': model, 'session': model.Session, 'user': self._get_user_name()}
+        #     license_list = p.toolkit.get_action('license_list')(context, {})
 
-            for constraint in use_constraints:
-                package_license = None
+        #     for constraint in use_constraints:
+        #         package_license = None
 
-                for license in license_list:
-                    if constraint.lower() == license.get('id') or constraint == license.get('url'):
-                        package_license = license.get('id')
-                        break
+        #         for license in license_list:
+        #             if constraint.lower() == license.get('id') or constraint == license.get('url'):
+        #                 package_license = license.get('id')
+        #                 break
 
-                if package_license:
-                    package_dict['license_id'] = package_license
-                    break
+        #         if package_license:
+        #             package_dict['license_id'] = package_license
+        #             break
 
 
         extras['access_constraints'] = iso_values.get('limitations-on-public-access', '')
@@ -431,11 +434,57 @@ class SpatialHarvester(HarvesterBase):
         self.__base_transform_to_iso_called = True
         return None
 
+
+    def map_syke(self, package_dict):
+        '''
+        Map Syke schema to Etsin schema
+        '''
+
+        # Add version
+        package_dict['version'] = datetime.now().strftime("%Y-%m-%d")
+
+        # Map language
+        for item in (i for i in package_dict['extras'] if i['key'] == 'metadata-language'):
+            metadatalanguage = item['value']
+            package_dict['language'] = metadatalanguage
+
+        # Map title and notes
+        package_dict['langtitle'] = [{'lang': metadatalanguage, 'value': package_dict['title']}]
+        package_dict['langnotes'] = [{'lang': metadatalanguage, 'value': package_dict['notes']}]
+
+        # Map owner
+        package_dict['agent'] = []
+        for item in (i for i in package_dict['extras'] if i['key'] == 'responsible-party'):
+            owner = ast.literal_eval(item['value'])
+            package_dict['agent'].append({
+                'role': 'owner',
+                'name': owner[0]['name']
+            })
+
+        # Map distributor email
+        for item in (i for i in package_dict['extras'] if i['key'] == 'contact-email'):
+            package_dict['contact'] = [{
+                'email': item['value']
+            }]
+
+        # Map license
+        for item in (i for i in package_dict['extras'] if i['key'] == 'licence'):
+            package_dict['license_URL'] = item['value']
+
+        # Map spatial component?
+
+        # Convert extras to __extras (Syke)
+        package_dict['__extras'] = package_dict['extras']
+        package_dict.pop('extras', None)      
+
+        return package_dict
+
+
     def import_stage(self, harvest_object):
         context = {
             'model': model,
             'session': model.Session,
-            'user': self._get_user_name(),
+            'user': 'harvest' # KATA always harvests as 'harvest'
         }
 
         log = logging.getLogger(__name__ + '.import')
@@ -570,7 +619,7 @@ class SpatialHarvester(HarvesterBase):
         context.update({
            'extras_as_string': True,
            'api_version': '2',
-           'return_id_only': True})
+           'return_id_only': False}) # KATA requires full package to be returned
 
         if self._site_user and context['user'] == self._site_user['name']:
             context['ignore_auth'] = True
@@ -585,7 +634,12 @@ class SpatialHarvester(HarvesterBase):
         harvest_object.add()
 
         if status == 'new':
-            package_schema = logic.schema.default_create_package_schema()
+#            package_schema = logic.schema.default_create_package_schema()
+
+            # use Kata DC schema
+            from ckanext.kata.plugin import KataPlugin
+            package_schema = KataPlugin.create_package_schema_oai_dc()
+
             package_schema['tags'] = tag_schema
             context['schema'] = package_schema
 
@@ -602,6 +656,9 @@ class SpatialHarvester(HarvesterBase):
             # plugin)
             model.Session.execute('SET CONSTRAINTS harvest_object_package_id_fkey DEFERRED')
             model.Session.flush()
+
+            # Convert Syke fields to Etsin schema
+            package_dict = self.map_syke(package_dict)
 
             try:
                 package_id = p.toolkit.get_action('package_create')(context, package_dict)
@@ -649,6 +706,10 @@ class SpatialHarvester(HarvesterBase):
                 context['schema'] = package_schema
 
                 package_dict['id'] = harvest_object.package_id
+
+                # Convert Syke fields to Etsin schema
+                package_dict = self.map_syke(package_dict)
+
                 try:
                     package_id = p.toolkit.get_action('package_update')(context, package_dict)
                     log.info('Updated package %s with guid %s', package_id, harvest_object.guid)
