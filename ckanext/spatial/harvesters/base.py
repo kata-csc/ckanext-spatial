@@ -26,6 +26,8 @@ from ckan import logic
 from ckan.lib.navl.validators import not_empty
 from ckan.lib.search.index import PackageSearchIndex
 
+from ckanext.kata.utils import get_unique_package_id
+
 from ckanext.harvest.harvesters.base import HarvesterBase
 from ckanext.harvest.model import HarvestObject
 
@@ -471,11 +473,20 @@ class SpatialHarvester(HarvesterBase):
         for item in (i for i in package_dict['extras'] if i['key'] == 'licence'):
             package_dict['license_URL'] = item['value']
 
-        # Map spatial component?
-
-        # Convert extras to __extras (Syke)
+        # Convert extras to __extras
+        # Extras may not include any keys contained in the root scheme, 
+        # causing errors unless we truncate them
         package_dict['__extras'] = package_dict['extras']
-        package_dict.pop('extras', None)      
+        package_dict.pop('extras', None)
+
+        # Map spatial component
+        for item in (i for i in package_dict['__extras'] if i['key'] == 'spatial'):
+            package_dict['extras'] = [{'key': 'spatial', 'value': item['value']}]
+
+        # Map Etsin style pid
+        package_dict['pids'] = [{
+            'id': package_dict['id'], 
+            'type': 'primary'}]
 
         return package_dict
 
@@ -645,8 +656,11 @@ class SpatialHarvester(HarvesterBase):
 
             # We need to explicitly provide a package ID, otherwise ckanext-spatial
             # won't be be able to link the extent to the package.
-            package_dict['id'] = unicode(uuid.uuid4())
-            package_schema['id'] = [unicode]
+#            package_dict['id'] = unicode(uuid.uuid4())
+#            package_schema['id'] = [unicode]
+
+            # Use Etsin style id
+            package_dict['id'] = get_unique_package_id()
 
             # Save reference to the package on the object
             harvest_object.package_id = package_dict['id']
