@@ -27,6 +27,7 @@ from ckan.lib.navl.validators import not_empty
 from ckan.lib.search.index import PackageSearchIndex
 
 from ckanext.kata.utils import get_unique_package_id
+from ckanext.kata.converters import resolve_license_id
 
 from ckanext.harvest.harvesters.base import HarvesterBase
 from ckanext.harvest.model import HarvestObject
@@ -472,6 +473,8 @@ class SpatialHarvester(HarvesterBase):
         # Map license
         for item in (i for i in package_dict['extras'] if i['key'] == 'licence'):
             package_dict['license_URL'] = item['value']
+            # try to resolve license
+            package_dict['license_id'] = resolve_license_id(item['value'])
 
         # Convert extras to __extras
         # Extras may not include any keys contained in the root scheme, 
