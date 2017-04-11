@@ -47,7 +47,7 @@
 .leaflet-draw-actions li {
   display: none;
 }
-.dataset-map-expanded #dataset-map {
+/*.dataset-map-expanded #dataset-map {
   position: absolute;
   width: 940px;
   height: 384px;
@@ -56,7 +56,7 @@
   background-color: white;
   border: 1px solid #CCC;
   margin: 0;
-}
+}*/
 .dataset-map-expanded #dataset-map #dataset-map-container {
   height: 300px;
 }
