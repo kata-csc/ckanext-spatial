@@ -493,7 +493,7 @@ class SpatialHarvester(HarvesterBase):
             'type': 'primary'}]
 
         # Set discipline
-        package_dict['discipline'] = 'Ymp\u00E4rist\u00F6tiede'
+        package_dict['discipline'] = 'Ymp\\u00E4rist\\u00F6tiede'
 
         # Set availability
         package_dict['availability'] = 'contact_owner'
