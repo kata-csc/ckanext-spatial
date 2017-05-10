@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import ast
 import re
 import cgitb
@@ -467,7 +468,7 @@ class SpatialHarvester(HarvesterBase):
         # Map distributor email
         for item in (i for i in package_dict['extras'] if i['key'] == 'contact-email'):
             package_dict['contact'] = [{
-                'email': item['value']
+                'email': item['value'].replace("[at]", "@").split(";")[0]
             }]
 
         # Map license
@@ -492,7 +493,7 @@ class SpatialHarvester(HarvesterBase):
             'type': 'primary'}]
 
         # Set discipline
-        package_dict['discipline'] = 'Ympäristötiede'
+        package_dict['discipline'] = 'Ymp\u00E4rist\u00F6tiede'
 
         # Set availability
         package_dict['availability'] = 'contact_owner'
