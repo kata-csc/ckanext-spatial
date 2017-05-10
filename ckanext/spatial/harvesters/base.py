@@ -467,8 +467,9 @@ class SpatialHarvester(HarvesterBase):
 
         # Map distributor email
         for item in (i for i in package_dict['extras'] if i['key'] == 'contact-email'):
+            cleaned_email = item['value'].replace("[at]", "@").split(";")[0]
             package_dict['contact'] = [{
-                'email': item['value'].replace("[at]", "@").split(";")[0]
+                'email': cleaned_email
             }]
 
         # Map license
@@ -493,7 +494,7 @@ class SpatialHarvester(HarvesterBase):
             'type': 'primary'}]
 
         # Set discipline
-        package_dict['discipline'] = 'Ymp\\u00E4rist\\u00F6tiede'
+        package_dict['discipline'] = u'Ymp\u00E4rist\u00F6tiede'
 
         # Set availability
         package_dict['availability'] = 'contact_owner'
