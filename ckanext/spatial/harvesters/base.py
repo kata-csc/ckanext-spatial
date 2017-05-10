@@ -491,6 +491,12 @@ class SpatialHarvester(HarvesterBase):
             'id': package_dict['id'], 
             'type': 'primary'}]
 
+        # Set discipline
+        package_dict['discipline'] = 'Ympäristötiede'
+
+        # Set availability
+        package_dict['availability'] = 'contact_owner'
+
         return package_dict
 
 
