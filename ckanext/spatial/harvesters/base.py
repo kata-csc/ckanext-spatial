@@ -467,7 +467,9 @@ class SpatialHarvester(HarvesterBase):
 
         # Map distributor email
         for item in (i for i in package_dict['extras'] if i['key'] == 'contact-email'):
-            cleaned_email = item['value'].replace("[at]", "@").split(";")[0]
+            cleaned_email = "".join(item['value'].split()) # strip whitespace
+            cleaned_email = cleaned_email.replace("[at]", "@") # ensure @
+            cleaned_email = cleaned_email.split(";")[0] # ignore all but first email
             package_dict['contact'] = [{
                 'email': cleaned_email
             }]
@@ -494,7 +496,7 @@ class SpatialHarvester(HarvesterBase):
             'type': 'primary'}]
 
         # Set discipline
-        package_dict['discipline'] = u'Ymp\u00E4rist\u00F6tiede'
+        package_dict['discipline'] = u'http://www.yso.fi/onto/okm-tieteenala/ta1172'
 
         # Set availability
         package_dict['availability'] = 'contact_owner'
