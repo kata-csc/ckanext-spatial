@@ -27,6 +27,7 @@ from ckan import logic
 from ckan.lib.navl.validators import not_empty
 from ckan.lib.search.index import PackageSearchIndex
 
+from ckanext.kata.schemas import Schemas
 from ckanext.kata.utils import get_unique_package_id
 from ckanext.kata.converters import resolve_license_id
 
@@ -728,8 +729,8 @@ class SpatialHarvester(HarvesterBase):
 
                 log.info('Document with GUID %s unchanged, skipping...' % (harvest_object.guid))
             else:
-                package_schema = logic.schema.default_update_package_schema()
-                package_schema['tags'] = tag_schema
+                # Use Etsin schema
+                package_schema = Schemas.update_package_schema_oai_dc()
                 context['schema'] = package_schema
 
                 package_dict['id'] = harvest_object.package_id
