@@ -113,6 +113,10 @@ def guess_resource_format(url, use_mimetypes=True):
     return None
 
 
+def convert_encoding_chars_to_chars(text):
+    return text.decode('unicode-escape')
+
+
 class SpatialHarvester(HarvesterBase):
 
     _user_name = None
@@ -463,7 +467,7 @@ class SpatialHarvester(HarvesterBase):
             owner = ast.literal_eval(item['value'])
             package_dict['agent'].append({
                 'role': 'owner',
-                'name': owner[0]['name']
+                'name': convert_encoding_chars_to_chars(owner[0]['name'])
             })
 
         # Map distributor email
@@ -477,7 +481,7 @@ class SpatialHarvester(HarvesterBase):
 
         # Map license
         for item in (i for i in package_dict['extras'] if i['key'] == 'licence'):
-            package_dict['license_URL'] = item['value']
+            package_dict['license_URL'] = convert_encoding_chars_to_chars(item['value'])
             # try to resolve license
             package_dict['license_id'] = resolve_license_id(item['value'])
 
